@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<base href="/" />
+<title>Cronos · GDM</title>
+<link rel="icon" href="assets/gdm-logo.png" />
+
+<!-- Self-hosted fonts — no external requests -->
+<link rel="stylesheet" href="styles/fonts.css" />
+
+<!-- Tailwind v4 browser build (processes @theme and utility classes) -->
+<script src="vendor/tailwind-v4.js"></script>
+
+<!-- Design tokens + Tailwind theme configuration -->
+<style type="text/tailwindcss">
+  @theme {
+    --font-sans: Manrope, ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+    --color-brand-50:  #FBF5F7;
+    --color-brand-100: #F4E6EC;
+    --color-brand-200: #E5C5D2;
+    --color-brand-300: #C99AB0;
+    --color-brand-400: #9F5F7E;
+    --color-brand-500: #7A3658;
+    --color-brand-600: #5C1F3F;
+    --color-brand-700: #42112D;
+    --color-brand-800: #2E0A1F;
+    --color-brand-900: #1C0513;
+    --color-brand:     #3D0F26;
+
+    --color-ink-50:  #F7F7F6;
+    --color-ink-100: #EDECEA;
+    --color-ink-200: #D9D7D3;
+    --color-ink-300: #B6B2AC;
+    --color-ink-400: #8A857D;
+    --color-ink-500: #5E5A53;
+    --color-ink-600: #403D38;
+    --color-ink-700: #2A2825;
+    --color-ink-800: #1A1917;
+    --color-ink-900: #0F0E0D;
+
+    --color-status-pending:  #9CA39C;
+    --color-status-progress: #2563EB;
+    --color-status-done:     #16A34A;
+    --color-status-late:     #DC2626;
+
+    --color-canvas: #F7F5F2;
+
+    --shadow-card:       0 1px 2px rgba(15,14,13,0.04), 0 1px 0 rgba(15,14,13,0.03);
+    --shadow-card-hover: 0 6px 24px -8px rgba(61,15,38,0.18), 0 2px 4px rgba(15,14,13,0.06);
+    --shadow-panel:      0 1px 0 rgba(15,14,13,0.04);
+    --shadow-pop:        0 12px 32px -8px rgba(15,14,13,0.18);
+
+    --radius-xl2: 14px;
+  }
+</style>
+
+<!-- Global styles: scrollbars, animations, print -->
+<link rel="stylesheet" href="styles/globals.css" />
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React 18 (production build) -->
+  <script src="vendor/react.production.min.js"></script>
+  <script src="vendor/react-dom.production.min.js"></script>
+
+  <!-- Babel standalone — transpiles JSX in-browser (needed without a build step) -->
+  <script src="vendor/babel.min.js"></script>
+
+  <!-- jsPDF — native PDF generation without html2canvas -->
+  <script src="vendor/jspdf.umd.min.js"></script>
+
+  <!-- App scripts — order matters: dependencies must load before consumers -->
+  <script src="src/store.js"></script>
+  <script src="src/pdf-export.js"></script>
+  <script type="text/babel" data-presets="env,react" src="src/components/ui.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/components/Gantt.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/components/ProjectList.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/components/ProjectForm.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/components/GanttView.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/components/Auth.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/components/ShareModal.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/components/Comments.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/app.jsx"></script>
+</body>
+</html>

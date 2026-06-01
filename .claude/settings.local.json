@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pkill -f \"server.py\")",
+      "Bash(python3 server.py)",
+      "Bash(curl -s http://localhost:8181/api/me)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(curl -s http://localhost:8181/src/app.jsx)",
+      "Bash(kill 3029)",
+      "Bash(pkill -f \"cronos_serve\")",
+      "Bash(mkdir -p \"/Users/mac/Documents/GDM Cronos/.claude\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(pkill -f \"cronos_server\")",
+      "Bash(python3 -)",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s http://localhost:8181/api/share/tokeninexistente)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{content_type}\" http://localhost:8181/share/qualquertoken)"
+    ]
+  }
+}

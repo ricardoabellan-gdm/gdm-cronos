@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Cronos GDM",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["/tmp/cronos_server.py"],
+      "port": 8181
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+# Cronos GDM não usa dependências externas — roda 100% com a biblioteca padrão
+# do Python 3. Este arquivo existe para o Render detectar o runtime Python.

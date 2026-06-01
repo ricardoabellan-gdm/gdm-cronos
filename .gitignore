@@ -1,0 +1,12 @@
+# Banco de dados local — em produção vive no disco persistente do Render.
+cronos.db
+cronos.db-wal
+cronos.db-shm
+*.db
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store

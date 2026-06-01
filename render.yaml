@@ -1,0 +1,30 @@
+# Configuração de deploy do Cronos GDM no Render.
+# https://render.com/docs/blueprint-spec
+#
+# Importa este blueprint em: Render Dashboard → New → Blueprint → conectar o repositório.
+
+services:
+  - type: web
+    name: cronos-gdm
+    runtime: python
+    plan: starter            # disco persistente exige plano pago (Starter ~US$7/mês)
+    region: oregon           # ajuste para a região mais próxima (oregon, frankfurt, singapore…)
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python server.py"
+    healthCheckPath: /index.html
+
+    # Disco persistente — os dados (cronos.db) sobrevivem a deploys e restarts.
+    disk:
+      name: cronos-data
+      mountPath: /var/data
+      sizeGB: 1
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.4"
+      - key: DATA_DIR
+        value: /var/data
+      # Defina ALLOWED_ORIGINS apenas se um front-end de OUTRO domínio precisar
+      # consumir esta API. Para o uso normal (mesmo domínio) deixe em branco.
+      # - key: ALLOWED_ORIGINS
+      #   value: https://seu-front.exemplo.com
