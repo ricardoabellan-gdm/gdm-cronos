@@ -19,6 +19,7 @@ function App() {
   const [sharedProject, setSharedProject] = useAppState(null); // for /share/:token view
   const [sharedComments, setSharedComments] = useAppState([]);  // comments in shared view
   const [ganttComments, setGanttComments]   = useAppState([]);  // comments in owner view
+  const [adminUsers, setAdminUsers]         = useAppState([]);  // full user list (admin view)
   const toast = window.useToast();
   const saveRef = useAppRef(null);
 
@@ -61,6 +62,13 @@ function App() {
     if (route.name !== 'gantt' || !route.id) return;
     window.CronosStore.loadComments(route.id).then(setGanttComments);
   }, [route.name, route.id]);
+
+  /* ── load full user list for the admin view ────────────────────────────── */
+  useAppEffect(() => {
+    if (user && user.role === 'admin') {
+      window.CronosStore.loadUsers().then(setAdminUsers);
+    }
+  }, [user]);
 
   /* ── auth callbacks ─────────────────────────────────────────────────────── */
   const handleAuth = useAppCallback(async (u, incomingPs) => {
@@ -189,12 +197,22 @@ function App() {
     danger: true,
     action: () => {
       window.CronosStore.deleteUser(u.id)
-        .then(() => window.CronosStore.loadProjects().then(ps => setProjects(ps)))
+        .then(() => Promise.all([
+          window.CronosStore.loadProjects().then(setProjects),
+          window.CronosStore.loadUsers().then(setAdminUsers),
+        ]))
         .catch(console.error);
       toast('Usuário excluído', { kind: 'success' });
       setConfirm(null);
     },
   });
+
+  // Throws on error so the form can show the message inline.
+  const onCreateUser = async (name, email, password) => {
+    await window.CronosStore.createUser(name, email, password);
+    const us = await window.CronosStore.loadUsers();
+    setAdminUsers(us);
+  };
 
   const onDuplicate = (p) => {
     const copy = JSON.parse(JSON.stringify(p));
@@ -294,12 +312,14 @@ function App() {
     body = (
       <window.ProjectList
         projects={projects}
+        users={adminUsers}
         isAdmin={isAdmin}
         onNew={isAdmin ? null : goNew}
         onEdit={isAdmin ? null : goEdit}
         onGantt={goGantt}
         onDelete={onDelete}
         onDeleteUser={isAdmin ? onDeleteUser : null}
+        onCreateUser={isAdmin ? onCreateUser : null}
         onDuplicate={isAdmin ? null : onDuplicate}
         onExport={onExportJSON}
         onShare={isAdmin ? null : (p) => setShareModal(p)}

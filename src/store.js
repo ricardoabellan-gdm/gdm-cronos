@@ -160,6 +160,17 @@
     }
   }
 
+  async function createUser(name, email, password) {
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ name, email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `createUser: HTTP ${res.status}`);
+    return data; // { user }
+  }
+
   async function enableShare(projectId) {
     const res = await fetch(`/api/projects/${projectId}/share`, {
       method: 'POST',
@@ -239,7 +250,7 @@
     STATUS, projectStats,
     // API
     getMe, loadProjects, saveProjects, logout,
-    deleteProject, deleteUser, loadUsers,
+    deleteProject, deleteUser, loadUsers, createUser,
     enableShare, disableShare, loadSharedProject,
     postComment, postCommentAuth, loadComments, deleteComment,
   };

@@ -266,6 +266,7 @@ class CronosHandler(http.server.SimpleHTTPRequestHandler):
             ('GET',  '/api/projects'):  self._get_projects,
             ('PUT',  '/api/projects'):  self._put_projects,
             ('GET',  '/api/users'):     self._get_users,
+            ('POST', '/api/users'):     self._create_user,
         }
         fn = table.get((method, path))
         if fn:
@@ -614,6 +615,34 @@ class CronosHandler(http.server.SimpleHTTPRequestHandler):
                 "WHERE role != 'admin' ORDER BY name"
             ).fetchall()
         self._json(200, {'users': [dict(r) for r in rows]})
+
+    def _create_user(self):
+        admin = self._admin()
+        if not admin:
+            return
+        b = self._body()
+        name     = (b.get('name')     or '').strip()
+        email    = (b.get('email')    or '').strip().lower()
+        password = (b.get('password') or '')
+
+        if not name:
+            return self._json(400, {'error': 'Nome obrigatório'})
+        if not email or '@' not in email:
+            return self._json(400, {'error': 'E-mail inválido'})
+        if len(password) < 6:
+            return self._json(400, {'error': 'Senha deve ter no mínimo 6 caracteres'})
+
+        try:
+            with get_db() as conn:
+                cur = conn.execute(
+                    "INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, 'user')",
+                    (name, email, hash_password(password))
+                )
+                uid = cur.lastrowid
+        except sqlite3.IntegrityError:
+            return self._json(409, {'error': 'E-mail já cadastrado'})
+
+        self._json(201, {'user': {'id': uid, 'name': name, 'email': email, 'role': 'user'}})
 
     def _delete_project(self, project_id: str):
         user = self._admin()

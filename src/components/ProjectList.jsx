@@ -131,7 +131,65 @@ function EmptyState({ onNew, onImport }) {
 
 }
 
-function ProjectList({ projects, onNew, onEdit, onGantt, onDelete, onDeleteUser, onDuplicate, onExport, onShare, onImport, isAdmin }) {
+function CreateUserForm({ onCreate }) {
+  const [name, setName]         = useListState('');
+  const [email, setEmail]       = useListState('');
+  const [password, setPassword] = useListState('');
+  const [busy, setBusy]         = useListState(false);
+  const [error, setError]       = useListState('');
+  const toast = window.useToast();
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setBusy(true);
+    try {
+      await onCreate(name.trim(), email.trim(), password);
+      toast(`Usuário ${name.trim()} criado`, { kind: 'success' });
+      setName(''); setEmail(''); setPassword('');
+    } catch (err) {
+      setError(err.message || 'Não foi possível criar o usuário.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="bg-white border border-ink-100 rounded-xl2 shadow-card p-5 mb-7">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-7 h-7 rounded-full bg-brand-100 flex items-center justify-center">
+          <window.Icon name="user" className="w-3.5 h-3.5 text-brand" />
+        </div>
+        <h2 className="text-[15px] font-bold text-ink-900">Criar novo usuário</h2>
+      </div>
+      <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+        <window.Field label="Nome" required>
+          <window.Input value={name} onChange={e => setName(e.target.value)}
+            placeholder="Nome do usuário" autoComplete="off" required />
+        </window.Field>
+        <window.Field label="E-mail" required>
+          <window.Input type="email" value={email} onChange={e => setEmail(e.target.value)}
+            placeholder="email@exemplo.com" autoComplete="off" required />
+        </window.Field>
+        <window.Field label="Senha" required>
+          <window.Input type="password" value={password} onChange={e => setPassword(e.target.value)}
+            placeholder="Mínimo 6 caracteres" autoComplete="new-password" required />
+        </window.Field>
+        <div className="md:col-span-3 flex items-center justify-between gap-3">
+          {error
+            ? <div className="text-[12.5px] text-status-late bg-status-late/5 border border-status-late/20 rounded-lg px-3 py-2">{error}</div>
+            : <span />}
+          <window.Button type="submit" icon="plus"
+            disabled={busy || !name.trim() || !email.trim() || password.length < 6}>
+            {busy ? 'Criando…' : 'Criar usuário'}
+          </window.Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function ProjectList({ projects, users, onNew, onEdit, onGantt, onDelete, onDeleteUser, onCreateUser, onDuplicate, onExport, onShare, onImport, isAdmin }) {
   const [q, setQ] = useListState('');
   const [filter, setFilter] = useListState('all');
   const fileInputRef = useListRef(null);
@@ -162,19 +220,39 @@ function ProjectList({ projects, onNew, onEdit, onGantt, onDelete, onDeleteUser,
     return s;
   }, [projects]);
 
-  // Admin: group filtered projects by owner
+  // Admin: group projects by owner.
+  // Without an active search/filter, start from the full user list so that
+  // newly created users (with no projects yet) also appear.
   const adminGroups = useListMemo(() => {
     if (!isAdmin) return null;
-    const map = {};
+    const filtering = q.trim() !== '' || filter !== 'all';
+
+    const byOwner = {};
     filtered.forEach((p) => {
       const key = p._owner?.email || 'unknown';
-      if (!map[key]) map[key] = { owner: p._owner, projects: [] };
-      map[key].projects.push(p);
+      if (!byOwner[key]) byOwner[key] = { owner: p._owner, projects: [] };
+      byOwner[key].projects.push(p);
     });
-    return Object.values(map).sort((a, b) =>
-      (a.owner?.name || '').localeCompare(b.owner?.name || '', 'pt')
-    );
-  }, [filtered, isAdmin]);
+
+    const sortByName = (a, b) =>
+      (a.owner?.name || '').localeCompare(b.owner?.name || '', 'pt');
+
+    if (filtering) {
+      return Object.values(byOwner).sort(sortByName);
+    }
+
+    // Not filtering: one group per known user, projects attached (possibly empty).
+    const groups = (users || []).map((u) => ({
+      owner: { id: u.id, name: u.name, email: u.email },
+      projects: byOwner[u.email]?.projects || [],
+    }));
+    // Safety: include any project owner not present in the users list.
+    Object.values(byOwner).forEach((g) => {
+      const email = g.owner?.email;
+      if (email && !(users || []).some((u) => u.email === email)) groups.push(g);
+    });
+    return groups.sort(sortByName);
+  }, [filtered, isAdmin, users, q, filter]);
 
   const FILTERS = [
   { k: 'all', l: 'Todos', count: summary.total },
@@ -227,6 +305,9 @@ function ProjectList({ projects, onNew, onEdit, onGantt, onDelete, onDeleteUser,
         )}
       </div>
 
+      {/* Create user — admin only */}
+      {isAdmin && onCreateUser && <CreateUserForm onCreate={onCreateUser} />}
+
       {/* Summary tiles */}
       {projects.length > 0 &&
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-7">
@@ -277,10 +358,10 @@ function ProjectList({ projects, onNew, onEdit, onGantt, onDelete, onDeleteUser,
 
       {/* Grid — admin: grouped by user */}
       {isAdmin && (
-        projects.length === 0 ?
-        <div className="text-center py-16 text-ink-400 text-[14px]">Nenhum cronograma cadastrado no sistema.</div> :
-        filtered.length === 0 ?
-        <div className="text-center py-16 text-ink-400 text-[14px]">Nenhum projeto corresponde aos filtros.</div> :
+        adminGroups.length === 0 ?
+        ((q.trim() || filter !== 'all')
+          ? <div className="text-center py-16 text-ink-400 text-[14px]">Nenhum projeto corresponde aos filtros.</div>
+          : <div className="text-center py-16 text-ink-400 text-[14px]">Nenhum usuário cadastrado ainda.</div>) :
         <div className="space-y-10">
           {adminGroups.map((group) => (
             <div key={group.owner?.email || 'unknown'}>
@@ -305,9 +386,15 @@ function ProjectList({ projects, onNew, onEdit, onGantt, onDelete, onDeleteUser,
                   </window.Button>
                 )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {group.projects.map((p) => <ProjectCard {...cardProps(p)} />)}
-              </div>
+              {group.projects.length === 0 ? (
+                <div className="text-[13px] text-ink-400 bg-ink-50 border border-ink-100 rounded-xl2 px-4 py-3">
+                  Nenhum cronograma ainda.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {group.projects.map((p) => <ProjectCard {...cardProps(p)} />)}
+                </div>
+              )}
             </div>
           ))}
         </div>
